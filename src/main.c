@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
     else {
         long n = atol(argv[1]);
         long nth_fibonacci = fib(n);
-        printf("%d\n", nth_fibonacci);
+        printf("%ld\n", nth_fibonacci);
     }
     return EXIT_SUCCESS;
 }
@@ -28,11 +28,29 @@ long fib(long n) {
     // May God have mercy on our souls.
     // Here be dragons and the City of Dis.
     // Lasciate ogni speranza, voi c'e l'entrate and all that
+    long nth_fib = 0;
     asm (
-        "incl %0"
-        : "=r" (n) // This will be "returned" (who knows how assembly works anyway?)
+        // AT&T Syntax
+        // Operations
+        // mov source, destination
+        // xadd source, destination -> moves sum of source and destination to the 
+        // destination register and the original destination value into the source
+
+        // $0 -> The $ indicates a literal numeric value
+        // rax -> Accumulator Register (results of mathematical operations)
+        // rcx -> Counter Register (how many times we want to do something)
+        // rdx -> Extended Accumulator Register
+        "mov $0, %%rdx      \n" // Write the first element of the fib sequence
+        "mov $1, %%rax      \n" // Write the second element of the fib sequence
+        "mov %0, %%rcx      \n" // Initialize counter to arg passed to asm
+        "fib_loop:          \n"
+        "xadd %%rdx, %%rax  \n"
+        "dec %%rcx          \n"
+        "jnz fib_loop       \n"
+        "mov %%rax, %1      \n"
+        : "=r" (nth_fib) // This will be "returned" (who knows how assembly works anyway?)
         : "r" (n) // This is the "argument" to the assembly "function" (i.e. an operand to the assembly instruction)
-        : // No registers clobbered! See: https://stackoverflow.com/questions/41899881/what-is-a-clobber/41900500
+        : "rcx", "rdx", "rax" // Now we're clobbering 😭
     );
-    return n;
+    return nth_fib;
 }
